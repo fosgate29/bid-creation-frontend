@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Trophy, TrendingDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/logo";
 
 interface RFB {
   id: string;
@@ -69,7 +70,7 @@ export default function ClosedBidsPage() {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="size-8 bg-primary rounded" />
+            <Logo className="size-8" />
             <h1 className="text-xl font-semibold">BondBid ZKP</h1>
           </div>
           <nav className="flex gap-6">

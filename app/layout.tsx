@@ -7,8 +7,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'BondBid ZKP - Request for Bid Platform',
+  description: 'Secure bond trading platform with Zero-Knowledge Proof technology for Vanilla and Exotic bonds',
   generator: 'v0.app',
   icons: {
     icon: [

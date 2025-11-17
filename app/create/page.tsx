@@ -16,6 +16,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/logo";
 
 export default function CreateRFBPage() {
   const router = useRouter();
@@ -60,7 +61,7 @@ export default function CreateRFBPage() {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="size-8 bg-primary rounded" />
+            <Logo className="size-8" />
             <h1 className="text-xl font-semibold">BondBid ZKP</h1>
           </div>
           <nav className="flex gap-6">
