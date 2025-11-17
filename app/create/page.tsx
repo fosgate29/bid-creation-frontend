@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Shield } from 'lucide-react';
+import { ArrowLeft, Shield, RefreshCw } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
 
@@ -29,6 +29,14 @@ export default function CreateRFBPage() {
     maturity: "",
     rfbId: "",
   });
+
+  const generateRfbId = () => {
+    const year = new Date().getFullYear();
+    const randomNum = Math.floor(Math.random() * 9000) + 1000; // 4-digit number
+    const randomLetters = Math.random().toString(36).substring(2, 5).toUpperCase();
+    const rfbId = `RFB-${year}-${randomLetters}${randomNum}`;
+    setFormData({ ...formData, rfbId });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,13 +125,24 @@ export default function CreateRFBPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="rfbId">RFB Identifier</Label>
-                  <Input
-                    id="rfbId"
-                    placeholder="e.g., RFB-2025-001"
-                    value={formData.rfbId}
-                    onChange={(e) => setFormData({ ...formData, rfbId: e.target.value })}
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="rfbId"
+                      placeholder="e.g., RFB-2025-ABC1234"
+                      value={formData.rfbId}
+                      onChange={(e) => setFormData({ ...formData, rfbId: e.target.value })}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={generateRfbId}
+                      title="Generate random RFB ID"
+                    >
+                      <RefreshCw className="size-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
