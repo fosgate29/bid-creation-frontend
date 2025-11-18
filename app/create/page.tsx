@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -14,28 +14,95 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Shield, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Shield } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
+
+interface Bond {
+  "ISIN / ISIN RegS": string;
+  "Issue name (eng)": string;
+  "Maturity date": string | null;
+  "Issue amount": number;
+  [key: string]: any;
+}
 
 export default function CreateRFBPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [bonds, setBonds] = useState<Bond[]>([]);
   const [formData, setFormData] = useState({
     bankName: "",
     isin: "",
-    bondType: "",
+    bondType: "vanilla",
     notionalAmount: "",
     maturity: "",
     rfbId: "",
   });
+
+  useEffect(() => {
+    // Load bonds from JSON file
+    fetch("/bonds_eng.json")
+      .then((res) => res.json())
+      .then((data) => {
+        setBonds(data);
+      })
+      .catch((error) => {
+        console.error("Error loading bonds:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load bonds data",
+          variant: "destructive",
+        });
+      });
+  }, [toast]);
 
   const generateRfbId = () => {
     const year = new Date().getFullYear();
     const randomNum = Math.floor(Math.random() * 9000) + 1000; // 4-digit number
     const randomLetters = Math.random().toString(36).substring(2, 5).toUpperCase();
     const rfbId = `RFB-${year}-${randomLetters}${randomNum}`;
-    setFormData({ ...formData, rfbId });
+    
+    return rfbId;
+  };
+
+  const convertDateToInputFormat = (dateString: string | null): string => {
+    if (!dateString) return "";
+    // Convert from "DD.MM.YYYY" to "YYYY-MM-DD"
+    const parts = dateString.split(".");
+    if (parts.length === 3) {
+      const [day, month, year] = parts;
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+    return "";
+  };
+
+  const formatCurrency = (value: string): string => {
+    if (!value) return "";
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return "";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(numValue);
+  };
+
+  const handleIsinChange = (value: string) => {
+    const selectedBond = bonds.find((bond) => bond["ISIN / ISIN RegS"] === value);
+    const maturityDate = selectedBond?.["Maturity date"] 
+      ? convertDateToInputFormat(selectedBond["Maturity date"])
+      : "";
+    const issueAmount = selectedBond?.["Issue amount"] 
+      ? selectedBond["Issue amount"].toString()
+      : "";
+    
+    setFormData({ 
+      ...formData, 
+      isin: value,
+      maturity: maturityDate,
+      notionalAmount: issueAmount
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -113,50 +180,39 @@ export default function CreateRFBPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="bankName">Bank Name</Label>
-                  <Input
-                    id="bankName"
-                    placeholder="Enter your bank name"
-                    value={formData.bankName}
-                    onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="rfbId">RFB Identifier</Label>
                   <div className="flex gap-2">
                     <Input
                       id="rfbId"
                       placeholder="e.g., RFB-2025-ABC1234"
-                      value={formData.rfbId}
-                      onChange={(e) => setFormData({ ...formData, rfbId: e.target.value })}
-                      required
+                      value={generateRfbId() || ""}
+                      readOnly
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={generateRfbId}
-                      title="Generate random RFB ID"
-                    >
-                      <RefreshCw className="size-4" />
-                    </Button>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="isin">ISIN Code</Label>
-                <Input
-                  id="isin"
-                  placeholder="e.g., US912828XY45"
-                  value={formData.isin}
-                  onChange={(e) => setFormData({ ...formData, isin: e.target.value })}
+                <Select 
+                  value={formData.isin} 
+                  onValueChange={handleIsinChange}
                   required
-                  maxLength={12}
-                />
-                <p className="text-xs text-muted-foreground">12-character alphanumeric code</p>
+                >
+                  <SelectTrigger id="isin">
+                    <SelectValue placeholder="Select ISIN code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bonds
+                      .filter((bond) => bond["ISIN / ISIN RegS"])
+                      .map((bond) => (
+                        <SelectItem key={bond["ISIN / ISIN RegS"]} value={bond["ISIN / ISIN RegS"]}>
+                          {bond["ISIN / ISIN RegS"]} - {bond["Full name of the issuer (eng)"]}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Select a bond from the list</p>
               </div>
 
               <div className="space-y-2">
@@ -179,12 +235,14 @@ export default function CreateRFBPage() {
                   <Label htmlFor="notionalAmount">Notional Amount (USD)</Label>
                   <Input
                     id="notionalAmount"
-                    type="number"
-                    placeholder="e.g., 1000000"
-                    value={formData.notionalAmount}
+                    type="text"
+                    placeholder="e.g., $1,000,000"
+                    value={formatCurrency(formData.notionalAmount)}
                     onChange={(e) => setFormData({ ...formData, notionalAmount: e.target.value })}
                     required
+                    readOnly
                   />
+                  <p className="text-xs text-muted-foreground">Automatically populated from selected bond</p>
                 </div>
 
                 <div className="space-y-2">
@@ -195,7 +253,9 @@ export default function CreateRFBPage() {
                     value={formData.maturity}
                     onChange={(e) => setFormData({ ...formData, maturity: e.target.value })}
                     required
+                    readOnly
                   />
+                  <p className="text-xs text-muted-foreground">Automatically populated from selected bond</p>
                 </div>
               </div>
 
